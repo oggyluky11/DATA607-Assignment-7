@@ -15,5 +15,13 @@
         <Year>2013</Year>
         <Edition>1st</Edition>
         <ISBN>978-1-449-36132-7</ISBN>
-	</book>	
+	</book>
+	<book id = "3">
+    	<Title>Bayesian Data Analysis</Title>
+        <Author Author1 = "Andrew Gelman" Author2 = "John B. Carlin" Author3 = "Hal S. Stern" Author4 = "David B. Dunson" Author5 = "Aki Vehtari" Author6 = "Donald B. Rubin"/>
+        <Publisher>CRC Press Taylor &amp; Francis Group</Publisher>
+        <Year>2013</Year>
+        <Edition>3rd</Edition>
+        <ISBN>978-1-4398-9820-8</ISBN>
+	</book>
 </three_books>
