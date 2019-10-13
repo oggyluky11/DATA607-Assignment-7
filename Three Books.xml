@@ -8,4 +8,12 @@
         <Edition>1st</Edition>
         <ISBN>978-1-118-83481-7</ISBN>
 	</book>
+    	<book id = "2">
+    	<Title>Data Science for Business</Title>
+        <Author Author1 = "Foster Provost" Author2 = "Tom Fawcett"/>
+        <Publisher>O’Reilly Media, Inc</Publisher>
+        <Year>2013</Year>
+        <Edition>1st</Edition>
+        <ISBN>978-1-449-36132-7</ISBN>
+	</book>	
 </three_books>
