@@ -1,0 +1,178 @@
+---
+title: "DATA 607 Week 7 Assignment : Working with XML and JSON in R"
+author: "Fan Xu"
+date: "10/13/2019"
+fontsize: 9pt
+output:
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_collapsed: yes
+    toc_float: yes
+  pdf_document:
+        extra_dependencies: ["geometry", "multicol", "multirow"]
+theme: lumen
+number_sections: yes
+toc_depth: 3
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# I. Assignment Description
+Pick three of your favorite books on one of your favorite subjects. At least one of the books should have more than one author. For each book, include the title, authors, and two or three other attributes that you find interesting.
+
+Take the information that you’ve selected about these three books, and separately create three files which store the book’s information in HTML (using an html table), XML, and JSON formats (e.g. “books.html”, “books.xml”, and “books.json”). To help you better understand the different file structures, I’d prefer that you create each of these files “by hand” unless you’re already very comfortable with the file formats.
+
+Write R code, using your packages of choice, to load the information from each of the three sources into separate R data frames. Are the three data frames identical?
+Your deliverable is the three source files and the R code. If you can, package your assignment solution up into an .Rmd file and publish to rpubs.com. [This will also require finding a way to make your three text files accessible from the web].
+
+# II. Data Preparation
+## a. Data of Three Books
+Three books with six attributes are selected for this assignment. A brief view of data is as below:
+
+|Title|Author|Publisher|Year|Edition|ISBN|
+|:-----------|:-------------------------|:------------|:-:|:-:|:----------:|
+|Automated Data Collection with R|Simon Munzert, Christian Rubba, Peter Meißner, Dominic Nyhuis|John Wiley & Sons, Ltd|2015|1st|978-1-118-83481-7|
+|Data Science for Business|Foster Provost, Tom Fawcett|O’Reilly Media, Inc|2013|1st|978-1-449-36132-7|
+|Bayesian Data Analysis|Andrew Gelman, John B. Carlin, Hal S. Stern, David B. Dunson, Aki Vehtari, Donald B. Rubin|CRC Press Taylor & Francis Group|2013|3rd|978-1-4398-9820-8|
+
+## b. R Packages
+The following packages are used in this assignment
+```{r packages, message = FALSE}
+library(tidyverse)
+library(XML)
+library(rvest)
+library(RCurl)
+library(jsonlite)
+```
+
+
+# III. HTML
+## a. Create a HTML file to store data
+
+A HTML file is created with \<title\> 'Three Books' and a table under \<body\>. The source code is as below:
+!['HTML Source Code'](https://raw.githubusercontent.com/oggyluky11/DATA607-Assignment-7/master/HTML%20Source%20Code.PNG)
+
+
+The code is interpreted by browser as below:
+!['HTML Interpretation'](https://raw.githubusercontent.com/oggyluky11/DATA607-Assignment-7/master/HTML%20interpreted.PNG)
+
+## b. Load HTML Table into R
+The following actions are performed to load the HTML table into R as dataframe:
+
+  1. use get `getURL` function to extract the link of the html file.
+  2. parse the html file with `read_html` function.
+  3. use `html_table` function to extract a list of tables if any from the html file and convert the tables into dataframes.
+  4. There is only one table in the html file, therefore the first element of the list is returned. 
+```{r HTML}
+url <- getURL('https://raw.githubusercontent.com/oggyluky11/DATA607-Assignment-7/master/Three%20Books.htm')
+df_HTML <- url %>%
+  read_html(encoding = 'UTF-8') %>%
+  html_table(header = NA, trim = TRUE) %>%
+  .[[1]]
+
+df_HTML
+str(df_HTML)
+```
+
+# IV. XML
+## a. Create a XML file to store data
+
+A XML file is created. All values are stored in elements except authors are sotred in attributes within tag \<Author\>. The source code is as below:
+!['XML Source Code'](https://raw.githubusercontent.com/oggyluky11/DATA607-Assignment-7/master/XML%20Source%20Code.PNG)
+
+## b. Load XML Table into R
+Firstly parse values in all elements into R dataframe.
+
+  1. Parse the XML table into R named `df_XML` using `xmlParse` function.
+  2. Find the root node of the parsed file using `xmlRoot` function.
+  3. Convert the XML table to dataframe using function `xmlToDataFrame`
+```{r XML 1}
+url <- getURL('https://raw.githubusercontent.com/oggyluky11/DATA607-Assignment-7/master/Three%20Books.xml')
+df_XML <- url %>%
+  xmlParse() %>%
+  xmlRoot() %>%
+  xmlToDataFrame(stringsAsFactors = FALSE)
+df_XML
+
+```
+The column `Author` is empty because the element \<Author\> itself is empty except attributes are defined.
+
+Therefore the attributes in \<Author\> is extracted seperately.
+
+  4. read xml file using function `read_XML`.
+  5. find all nodesets under tag \<Author\> using function `xml_nodes`.
+  6. get the attributes (authors) of each noteset using function `xml_attrs`.
+  7. Concatnate the attributes of each noteset into a single string seperated by ', ' in order to fit these data into a column in a dataframe.
+```{r XML 2}
+attr <- url %>%
+  read_xml() %>%
+  xml_nodes(xpath = '//Author') %>%
+  xml_attrs() %>%
+  lapply(function(x) str_c(x,collapse = ', ')) %>%
+  unlist()
+attr
+```
+
+  7. Update the column `Author` in `df_XML` with values from the list `attr`.
+```{r XML 3}
+df_XML <- df_XML %>% mutate(Author = attr)
+
+df_XML
+str(df_XML)
+```
+
+
+# V. JSON
+## a. Create a JSON file to store data
+
+A JOSN file is created. The source code is as below:
+!['JSON Source Code'](https://raw.githubusercontent.com/oggyluky11/DATA607-Assignment-7/master/JSON%20Source%20Code.PNG)
+
+## b. Load JSON table into R
+
+  1. Parse JSON into R as a list called `df_JSON`
+  2. Convert `df_JSON` to dataframe
+  3. reanme columns, removing prefix 'three.books.'
+  4. The column `Author` contains lists of names of authors of each book, therefore concatename those names in each list as one single string in order to fit into column 'Author'.
+```{r json}
+url <- getURL("https://raw.githubusercontent.com/oggyluky11/DATA607-Assignment-7/master/Three%20Books.json")
+df_JSON <- url %>%
+  fromJSON() %>%
+  as.data.frame() %>%
+  rename_all(funs(str_replace(., 'three\\.books\\.',''))) %>%
+  mutate(Author = unlist(lapply(Author, function(x) str_c(x, collapse = ', '))))
+
+df_JSON
+str(df_JSON)
+
+```
+
+
+# Comparison
+These three dataframes are almost identical. There are only minor differences while parsing numeric values from source file to R dataframe.
+
+1. `df_HTML` Vs `df_XML`
+
+The only difference is the data type of column `Year`. The `html_table` function from package `rvest` automatically parses numbers as numerical values, while the `xmlToDataFrame` function from package `XML` converts all values to characters if argument `stringsAsFactors` = FALSE. The two dataframes are identical if the data type of column `Year` in `df_XML` is converted to integer.
+```{r HTML VS XML}
+all.equal(df_HTML,df_XML)
+all.equal(df_HTML$Year, as.integer(df_XML$Year))
+```
+
+2. `df_HTML` Vs `df_JSON`
+
+The two dataframes are identical. both `html_table` function from package `rvest` and `fromJSON` from package `jsonlite` are robust enough to parse values in appropriate data types.
+```{r HTML VS JSON}
+all.equal(df_HTML,df_JSON)
+```
+
+3. `df_XML` Vs `df_JSON`
+
+The two dataframes are almost identical. The `xmlToDataFrame` function from package `XML` converts data type of numbers as characters if argument `stringsAsFactors` = FALSE, while the `fromJSON` from package `jsonlite` parses numbers as numerical values. The two dataframes are identical if the data type of column `Year` in `df_XML` is converted to integer.
+```{r XML VS JSON}
+all.equal(df_XML,df_JSON)
+all.equal(as.integer(df_XML$Year), df_JSON$Year)
+```
